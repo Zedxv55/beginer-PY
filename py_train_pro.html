@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>py.train PRO</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&family=Noto+Sans+Thai:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #09090f;
+  --s1: #111118;
+  --s2: #18181f;
+  --s3: #22222c;
+  --border: #2e2e3a;
+  --border2: #3a3a48;
+  --text: #e8e8f0;
+  --dim: #888899;
+  --dim2: #555566;
+  --py: #ffd43b;
+  --py2: #ffbe00;
+  --green: #4ade80;
+  --green-bg: #0d2818;
+  --red: #f87171;
+  --red-bg: #2a0e0e;
+  --blue: #60a5fa;
+  --blue-bg: #0d1f35;
+  --orange: #fb923c;
+  --purple: #a78bfa;
+  --cyan: #22d3ee;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans Thai', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Grain overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.4;
+}
+
+/* ─── HEADER ─── */
+header {
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(9,9,15,0.88);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; gap: 16px;
+}
+
+.logo {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px; font-weight: 700;
+  color: var(--py);
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+}
+.logo em { color: var(--dim); font-style: normal; }
+
+.xp-bar-wrap {
+  flex: 1; max-width: 220px;
+  background: var(--s3);
+  border-radius: 99px; height: 6px;
+  overflow: hidden;
+}
+.xp-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--py), var(--orange));
+  border-radius: 99px;
+  transition: width 0.6s cubic-bezier(.22,.68,0,1.2);
+}
+.xp-label { font-size: 12px; color: var(--dim); white-space: nowrap; }
+
+.streak {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; color: var(--orange);
+  display: flex; align-items: center; gap: 4px;
+}
+
+/* ─── LAYOUT ─── */
+.shell {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+}
+
+/* ─── HOME: mode select ─── */
+.mode-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+@media(max-width:520px){ .mode-grid { grid-template-columns: 1fr; } }
+
+.mode-card {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px;
+  cursor: pointer;
+  transition: all .2s;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+.mode-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--glow, transparent);
+  opacity: 0;
+  transition: opacity .3s;
+  border-radius: 16px;
+}
+.mode-card:hover::before { opacity: 1; }
+.mode-card:hover { border-color: var(--accent, var(--border2)); transform: translateY(-2px); }
+
+.mode-card.think { --glow: radial-gradient(ellipse at top left, rgba(96,165,250,.06), transparent 70%); --accent: var(--blue); }
+.mode-card.write { --glow: radial-gradient(ellipse at top left, rgba(74,222,128,.06), transparent 70%); --accent: var(--green); }
+.mode-card.debug { --glow: radial-gradient(ellipse at top left, rgba(251,146,60,.06), transparent 70%); --accent: var(--orange); }
+.mode-card.trace { --glow: radial-gradient(ellipse at top left, rgba(167,139,250,.06), transparent 70%); --accent: var(--purple); }
+
+.mode-icon { font-size: 28px; margin-bottom: 10px; }
+.mode-title { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+.mode-desc { font-size: 13px; color: var(--dim); line-height: 1.5; }
+.mode-count { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--dim2); margin-top: 10px; }
+
+/* ─── TOPIC PILLS ─── */
+.topic-pills {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 28px;
+}
+.pill {
+  background: var(--s2); border: 1px solid var(--border);
+  border-radius: 99px; padding: 6px 14px;
+  font-size: 13px; cursor: pointer;
+  transition: all .15s; color: var(--dim);
+}
+.pill:hover { border-color: var(--border2); color: var(--text); }
+.pill.active { background: var(--py); color: #000; border-color: var(--py); font-weight: 700; }
+
+/* ─── EXERCISE CARD ─── */
+.ex-card {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  animation: rise .3s cubic-bezier(.22,.68,0,1.2);
+}
+@keyframes rise {
+  from { opacity:0; transform: translateY(14px) scale(.98); }
+  to   { opacity:1; transform: none; }
+}
+
+.ex-top {
+  background: var(--s2);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 20px;
+  display: flex; align-items: center; gap: 10px;
+}
+
+.badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; font-weight: 700;
+  padding: 3px 9px; border-radius: 99px;
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.badge.easy   { background: #1a3322; color: var(--green); border: 1px solid #2a5535; }
+.badge.medium { background: #2a1f00; color: var(--py); border: 1px solid #4a3800; }
+.badge.hard   { background: #2a1010; color: var(--red); border: 1px solid #4a2020; }
+
+.badge-mode {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; padding: 3px 9px; border-radius: 99px;
+  border: 1px solid var(--border2); color: var(--dim);
+}
+
+.ex-qno { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--dim2); }
+
+.ex-body { padding: 24px 22px; }
+
+.ex-q {
+  font-size: 17px; font-weight: 700; line-height: 1.65;
+  margin-bottom: 16px;
+}
+.ex-q .sub { display: block; font-size: 13px; font-weight: 400; color: var(--dim); margin-top: 4px; }
+
+/* Code block */
+.code-block {
+  background: #0a0a12;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13.5px;
+  line-height: 1.8;
+  margin-bottom: 20px;
+  color: #cdd6f4;
+  white-space: pre-wrap;
+  position: relative;
+}
+.code-block .kw { color: #cba6f7; }
+.code-block .fn { color: #89b4fa; }
+.code-block .st { color: #a6e3a1; }
+.code-block .nu { color: #fab387; }
+.code-block .cm { color: var(--dim2); font-style: italic; }
+.code-block .hl { background: rgba(255,212,59,.08); border-left: 2px solid var(--py); padding-left: 8px; margin-left: -8px; display: block; }
+.code-block .blank {
+  display: inline-block;
+  background: rgba(255,212,59,.12);
+  border: 1px dashed var(--py);
+  border-radius: 4px;
+  padding: 0 8px;
+  min-width: 60px;
+  color: var(--py);
+  text-align: center;
+}
+
+/* MCQ */
+.choices { display: flex; flex-direction: column; gap: 9px; }
+.choice {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 13px 16px;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 12px;
+  transition: all .15s;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--text);
+  text-align: left;
+}
+.choice:hover:not(:disabled) { border-color: var(--blue); background: var(--blue-bg); }
+.choice:disabled { cursor: default; }
+.choice.correct { border-color: var(--green); background: var(--green-bg); color: var(--green); }
+.choice.wrong   { border-color: var(--red);   background: var(--red-bg);   color: var(--red); }
+
+.choice-key {
+  width: 26px; height: 26px;
+  background: var(--s3); border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+  color: var(--dim);
+}
+.choice.correct .choice-key { background: rgba(74,222,128,.2); color: var(--green); }
+.choice.wrong   .choice-key { background: rgba(248,113,113,.2); color: var(--red); }
+
+/* Fill input */
+.fill-row { display: flex; gap: 10px; }
+.fill-in {
+  flex: 1;
+  background: #0a0a12;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 13px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  color: var(--text);
+  outline: none;
+  transition: border-color .2s;
+}
+.fill-in:focus { border-color: var(--blue); }
+.fill-in.correct { border-color: var(--green); color: var(--green); }
+.fill-in.wrong   { border-color: var(--red);   color: var(--red); }
+
+/* Code write area */
+.code-editor {
+  width: 100%;
+  background: #0a0a12;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13.5px;
+  line-height: 1.8;
+  color: var(--cyan);
+  outline: none;
+  resize: vertical;
+  min-height: 130px;
+  transition: border-color .2s;
+  tab-size: 4;
+}
+.code-editor:focus { border-color: var(--cyan); }
+.code-editor.correct { border-color: var(--green); }
+.code-editor.wrong   { border-color: var(--red); }
+
+.editor-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--dim2);
+  margin-bottom: 7px;
+  display: flex; align-items: center; gap: 8px;
+}
+.editor-label span { color: var(--cyan); }
+
+/* Buttons */
+.btn {
+  border: none; border-radius: 9px;
+  padding: 12px 20px;
+  font-family: 'Noto Sans Thai', sans-serif;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all .15s;
+}
+.btn-check { background: var(--py); color: #000; }
+.btn-check:hover { background: var(--py2); }
+.btn-check:disabled { opacity: .35; cursor: default; }
+.btn-nav { background: var(--s2); border: 1px solid var(--border); color: var(--text); }
+.btn-nav:hover { border-color: var(--border2); }
+.btn-nav:disabled { opacity: .3; cursor: default; }
+.btn-next { background: var(--blue); color: #000; font-weight: 800; }
+.btn-next:hover { opacity: .85; }
+.btn-home { background: var(--s2); border: 1px solid var(--border); color: var(--dim); }
+.btn-home:hover { color: var(--text); border-color: var(--border2); }
+
+/* ─── AI FEEDBACK ─── */
+.feedback-wrap {
+  margin-top: 18px;
+  border-radius: 12px;
+  overflow: hidden;
+  display: none;
+}
+.feedback-wrap.show { display: block; animation: rise .3s ease; }
+
+.feedback-head {
+  padding: 11px 16px;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 700;
+}
+.feedback-head.correct { background: var(--green-bg); color: var(--green); border: 1px solid #2a5535; border-bottom: none; }
+.feedback-head.wrong   { background: var(--red-bg); color: var(--red); border: 1px solid #4a2020; border-bottom: none; }
+.feedback-head.thinking { background: var(--blue-bg); color: var(--blue); border: 1px solid #1a3550; border-bottom: none; }
+
+.feedback-body {
+  padding: 14px 16px;
+  font-size: 14px; line-height: 1.75;
+  color: var(--text);
+}
+.feedback-body.correct { background: rgba(13,40,24,.5); border: 1px solid #2a5535; border-top: none; border-radius: 0 0 12px 12px; }
+.feedback-body.wrong   { background: rgba(42,14,14,.5); border: 1px solid #4a2020; border-top: none; border-radius: 0 0 12px 12px; }
+.feedback-body.thinking { background: rgba(13,31,53,.5); border: 1px solid #1a3550; border-top: none; border-radius: 0 0 12px 12px; }
+
+.typing-dots span {
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: var(--blue);
+  border-radius: 50%;
+  animation: dot 1.2s infinite;
+  margin: 0 2px;
+}
+.typing-dots span:nth-child(2) { animation-delay: .2s; }
+.typing-dots span:nth-child(3) { animation-delay: .4s; }
+@keyframes dot {
+  0%,60%,100% { transform: translateY(0); opacity:.4; }
+  30% { transform: translateY(-5px); opacity:1; }
+}
+
+.hint-tag {
+  display: inline-block;
+  background: rgba(255,212,59,.1); color: var(--py);
+  border: 1px solid rgba(255,212,59,.2);
+  border-radius: 5px; padding: 1px 7px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+/* ─── NAV ROW ─── */
+.nav-row {
+  display: flex; justify-content: space-between;
+  align-items: center; margin-top: 22px; gap: 10px;
+}
+
+/* ─── SCORE ─── */
+.score-card {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 48px 32px;
+  text-align: center;
+  animation: rise .4s ease;
+}
+
+.big-score {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 72px; font-weight: 700;
+  background: linear-gradient(135deg, var(--py), var(--orange));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  line-height: 1; margin-bottom: 8px;
+}
+.score-sub { color: var(--dim); font-size: 15px; margin-bottom: 28px; }
+
+.result-grid {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 12px; margin-bottom: 32px;
+}
+.result-item {
+  background: var(--s2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px 12px;
+}
+.result-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 26px; font-weight: 700; margin-bottom: 4px;
+}
+.result-label { font-size: 12px; color: var(--dim); }
+
+.score-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn-retry { background: var(--py); color: #000; font-weight: 800; padding: 13px 28px; border-radius: 10px; border: none; cursor: pointer; font-family: 'Noto Sans Thai', sans-serif; font-size: 15px; }
+.btn-retry:hover { background: var(--py2); }
+
+/* ─── PROGRESS TRACK ─── */
+.q-track {
+  display: flex; gap: 5px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.q-dot {
+  width: 28px; height: 6px;
+  border-radius: 99px;
+  background: var(--s3);
+  transition: background .3s;
+}
+.q-dot.done-c { background: var(--green); }
+.q-dot.done-w { background: var(--red); }
+.q-dot.current { background: var(--py); }
+
+/* section title */
+.sec-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px; font-weight: 700;
+  color: var(--py); margin-bottom: 6px;
+}
+.sec-sub { color: var(--dim); font-size: 14px; margin-bottom: 24px; }
+
+/* Tab bar */
+.tab-bar {
+  display: flex; border-bottom: 1px solid var(--border);
+  margin-bottom: 24px; gap: 0;
+}
+.tab {
+  padding: 10px 18px;
+  font-size: 13px; font-weight: 600;
+  color: var(--dim); cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .15s; margin-bottom: -1px;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--py); border-bottom-color: var(--py); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">py<em>.</em>train <em style="font-size:11px;color:var(--dim)">PRO</em></div>
+  <div class="xp-bar-wrap"><div class="xp-bar" id="xpBar" style="width:0%"></div></div>
+  <div class="xp-label" id="xpLabel">XP 0</div>
+  <div class="streak" id="streakEl" style="display:none">🔥 <span id="streakNum">0</span></div>
+</header>
+
+<div class="shell">
+  <div id="homeScreen">
+    <div class="sec-title">// เลือกโหมดฝึก</div>
+    <div class="sec-sub">แต่ละโหมดฝึกคนละด้าน เล่นครบทุกโหมดเพื่อเก่งจริง</div>
+
+    <div class="mode-grid">
+      <div class="mode-card think" onclick="openMode('think')">
+        <div class="mode-icon">🧠</div>
+        <div class="mode-title" style="color:var(--blue)">คิดตาม (Trace)</div>
+        <div class="mode-desc">อ่านโค้ดแล้วตอบว่า output คืออะไร — ฝึกให้ "อ่านโค้ดออก"</div>
+        <div class="mode-count">MCQ · 10 ข้อ</div>
+      </div>
+      <div class="mode-card write" onclick="openMode('write')">
+        <div class="mode-icon">✍️</div>
+        <div class="mode-title" style="color:var(--green)">เขียนโค้ด (Code)</div>
+        <div class="mode-desc">โจทย์บอกให้ทำ — เขียนโค้ด Python เองทั้งบรรทัด แล้ว AI ตรวจให้</div>
+        <div class="mode-count">เขียน · 8 ข้อ</div>
+      </div>
+      <div class="mode-card debug" onclick="openMode('debug')">
+        <div class="mode-icon">🐛</div>
+        <div class="mode-title" style="color:var(--orange)">หาบั๊ก (Debug)</div>
+        <div class="mode-desc">โค้ดมีจุดผิด 1 จุด — หาและแก้ให้ถูกต้อง</div>
+        <div class="mode-count">เขียน · 8 ข้อ</div>
+      </div>
+      <div class="mode-card trace" onclick="openMode('fill')">
+        <div class="mode-icon">🧩</div>
+        <div class="mode-title" style="color:var(--purple)">เติมคำ (Fill)</div>
+        <div class="mode-desc">โค้ดขาดคำหรือ keyword — เติมให้สมบูรณ์</div>
+        <div class="mode-count">เติมคำ · 10 ข้อ</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="quizScreen" style="display:none">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <button class="btn btn-home" onclick="goHome()">← หน้าหลัก</button>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--dim)" id="modeLabel"></div>
+    </div>
+    <div class="q-track" id="qTrack"></div>
+    <div id="exerciseMount"></div>
+  </div>
+
+  <div id="scoreScreen" style="display:none"></div>
+</div>
+
+<script>
+// ──────────────────────────────────────────────
+// DATA
+// ──────────────────────────────────────────────
+const modes = {
+  think: {
+    label: '🧠 คิดตาม (Trace)',
+    exercises: [
+      { level:'easy', q:'ผลลัพธ์ของโค้ดนี้คืออะไร?',
+        code:`x = 5\nprint(x * 2)`, choices:['5','10','25','52'], answer:1,
+        explain:'x=5, x*2 = 10 — การคูณธรรมดาครับ' },
+      { level:'easy', q:'print จะแสดงอะไร?',
+        code:`a = 10\nb = 3\nprint(a % b)`, choices:['3','1','3.33','0'], answer:1,
+        explain:'% คือเศษจากการหาร: 10÷3=3 เหลือ 1' },
+      { level:'easy', q:'ผลลัพธ์คืออะไร?',
+        code:`name = "Python"\nprint(len(name))`, choices:['5','6','7','Python'], answer:1,
+        explain:'len() นับจำนวนตัวอักษร: P-y-t-h-o-n = 6 ตัว' },
+      { level:'easy', q:'โค้ดนี้พิมพ์อะไร?',
+        code:`for i in range(3):\n    print(i)`, choices:['1 2 3','0 1 2','0 1 2 3','1 2'], answer:1,
+        explain:'range(3) = 0,1,2 (เริ่มจาก 0, ไม่รวม 3)' },
+      { level:'medium', q:'ผลลัพธ์คืออะไร?',
+        code:`x = "5"\nprint(x * 3)`, choices:['15','555','53','Error'], answer:1,
+        explain:'x เป็น string → string * 3 = ทำซ้ำข้อความ "5"*3 = "555"' },
+      { level:'medium', q:'ได้ผลลัพธ์อะไร?',
+        code:`total = 0\nfor i in range(1, 4):\n    total += i\nprint(total)`, choices:['3','6','10','4'], answer:1,
+        explain:'total = 0+1+2+3 = 6 (range(1,4) = 1,2,3)' },
+      { level:'medium', q:'ฟังก์ชันนี้คืนค่าอะไร?',
+        code:`def check(n):\n    if n % 2 == 0:\n        return "คู่"\n    return "คี่"\n\nprint(check(7))`, choices:['คู่','คี่','7','None'], answer:1,
+        explain:'7 % 2 = 1 (ไม่ใช่ 0) → ข้าม if → return "คี่"' },
+      { level:'medium', q:'ผลลัพธ์คืออะไร?',
+        code:`x = 10\nif x > 5:\n    x = x + 1\nif x > 10:\n    x = x * 2\nprint(x)`, choices:['10','11','22','12'], answer:2,
+        explain:'x=10 → ผ่าน >5 → x=11 → ผ่าน >10 → x=22' },
+      { level:'hard', q:'ลูปนี้พิมพ์อะไรบ้าง?',
+        code:`for i in range(1, 6):\n    if i % 2 == 0:\n        continue\n    print(i)`, choices:['1 2 3 4 5','2 4','1 3 5','1 3 5 7'], answer:2,
+        explain:'continue ข้ามรอบเมื่อ i เป็นเลขคู่ → พิมพ์แค่ 1, 3, 5' },
+      { level:'hard', q:'ผลลัพธ์สุดท้ายคืออะไร?',
+        code:`def double(x):\n    return x * 2\n\ndef add_one(x):\n    return x + 1\n\nresult = add_one(double(4))\nprint(result)`, choices:['8','9','10','16'], answer:1,
+        explain:'double(4)=8 → add_one(8)=9' }
+    ]
+  },
+  fill: {
+    label: '🧩 เติมคำ (Fill)',
+    exercises: [
+      { level:'easy', q:'เติมให้ดูชนิดตัวแปร', code:'x = 3.14\nprint(_____(x))  # <class float>', answer:'type', explain:'type() แสดงชนิดข้อมูลของตัวแปร' },
+      { level:'easy', q:'เติมเพื่อรับค่าจากผู้ใช้', code:'name = _____(\"ชื่อของคุณ: \")', answer:'input', explain:'input() รับข้อความจากคีย์บอร์ด คืนค่าเป็น string เสมอ' },
+      { level:'easy', q:'เติม keyword ประกาศฟังก์ชัน', code:'_____ greet():\n    print("Hello!")', answer:'def', explain:'def (define) ใช้ประกาศฟังก์ชัน' },
+      { level:'easy', q:'เติมให้ได้เลข 0 ถึง 4', code:'for i in _____(5):\n    print(i)', answer:'range', explain:'range(5) สร้าง sequence 0,1,2,3,4' },
+      { level:'medium', q:'เติม operator เช็คเลขคู่', code:'num = 8\nif num _____ 2 == 0:\n    print("เลขคู่")', answer:'%', explain:'% (modulo) หาเศษ: 8%2=0 → เลขคู่' },
+      { level:'medium', q:'แปลง string เป็น integer', code:'x = "42"\nprint(_____(x) + 8)  # ต้องได้ 50', answer:'int', explain:'int() แปลง string→integer เพื่อทำคณิตศาสตร์ได้' },
+      { level:'medium', q:'เติม keyword คืนค่าจากฟังก์ชัน', code:'def square(n):\n    _____ n * n\n\nprint(square(5))  # 25', answer:'return', explain:'return ส่งค่ากลับ ถ้าไม่มีจะได้ None' },
+      { level:'medium', q:'เติม keyword เงื่อนไขที่ 2', code:'score = 75\nif score >= 80:\n    print("A")\n_____ score >= 70:\n    print("B")', answer:'elif', explain:'elif = "else if" ใช้เมื่อมีเงื่อนไขมากกว่า 2 กรณี' },
+      { level:'hard', q:'เติมเพื่อหยุด loop เมื่อเจอ 5', code:'for i in range(10):\n    if i == 5:\n        _____\n    print(i)  # พิมพ์ 0-4', answer:'break', explain:'break ออกจาก loop ทันที' },
+      { level:'hard', q:'เติมให้แปลงตัวเลขเป็น string', code:'num = 99\nmsg = "คะแนน: " + _____(num)\nprint(msg)', answer:'str', explain:'ต้องแปลง int→str ก่อนนำมาต่อกับ string ด้วย str()' }
+    ]
+  },
+  write: {
+    label: '✍️ เขียนโค้ด (Code)',
+    exercises: [
+      { level:'easy', q:'เขียนโค้ดเก็บชื่อของคุณในตัวแปร name แล้วพิมพ์ว่า "สวัสดี [ชื่อ]"',
+        hint:'ใช้ตัวแปร, print(), และ string',
+        template:'',
+        check: code => /name\s*=/.test(code) && /print/.test(code),
+        exampleAnswer:'name = "สมชาย"\nprint("สวัสดี", name)',
+        topic:'variables' },
+      { level:'easy', q:'เขียนโค้ดคำนวณพื้นที่สี่เหลี่ยม (กว้าง 5, ยาว 8) แล้วพิมพ์ผลลัพธ์',
+        hint:'area = กว้าง * ยาว',
+        template:'',
+        check: code => /\*/.test(code) && /print/.test(code) && (code.includes('40') || /5.*8|8.*5/.test(code)),
+        exampleAnswer:'width = 5\nlength = 8\narea = width * length\nprint(area)  # 40',
+        topic:'variables' },
+      { level:'easy', q:'เขียนฟังก์ชัน add(a, b) ที่รับตัวเลข 2 ตัวแล้ว return ผลบวก',
+        hint:'def, return',
+        template:'def add(a, b):\n    ',
+        check: code => /def\s+add/.test(code) && /return/.test(code),
+        exampleAnswer:'def add(a, b):\n    return a + b\n\nprint(add(3, 7))  # 10',
+        topic:'function' },
+      { level:'medium', q:'เขียนโค้ดรับตัวเลขจากผู้ใช้ แล้วบอกว่าเป็น "เลขคู่" หรือ "เลขคี่"',
+        hint:'input(), int(), if, %',
+        template:'',
+        check: code => /input/.test(code) && /int/.test(code) && /%/.test(code) && /if/.test(code),
+        exampleAnswer:'num = int(input("ใส่ตัวเลข: "))\nif num % 2 == 0:\n    print("เลขคู่")\nelse:\n    print("เลขคี่")',
+        topic:'condition' },
+      { level:'medium', q:'เขียนโค้ดหาผลรวม 1+2+3+...+10 โดยใช้ for loop',
+        hint:'for, range, total +=',
+        template:'total = 0\n',
+        check: code => /for/.test(code) && /range/.test(code) && (/total\s*\+=/.test(code) || /total\s*=\s*total/.test(code)) && /print/.test(code),
+        exampleAnswer:'total = 0\nfor i in range(1, 11):\n    total += i\nprint(total)  # 55',
+        topic:'loop' },
+      { level:'medium', q:'เขียนฟังก์ชัน is_positive(n) ที่คืน True ถ้า n > 0 และ False ถ้าไม่ใช่',
+        hint:'def, return, if',
+        template:'',
+        check: code => /def\s+is_positive/.test(code) && /return/.test(code) && /True/.test(code) && /False/.test(code),
+        exampleAnswer:'def is_positive(n):\n    if n > 0:\n        return True\n    return False',
+        topic:'function' },
+      { level:'hard', q:'เขียนโค้ดพิมพ์เฉพาะเลขที่หารด้วย 3 ลงตัว ในช่วง 1 ถึง 20',
+        hint:'for, range, %, if',
+        template:'',
+        check: code => /for/.test(code) && /range/.test(code) && /%\s*3/.test(code) && /print/.test(code),
+        exampleAnswer:'for i in range(1, 21):\n    if i % 3 == 0:\n        print(i)',
+        topic:'loop' },
+      { level:'hard', q:'เขียนฟังก์ชัน greet(name, lang) ที่ทักทายเป็นภาษาต่างๆ — "thai"→"สวัสดี", "english"→"Hello", อื่นๆ→"Hi"',
+        hint:'def, if, elif, else, return',
+        template:'',
+        check: code => /def\s+greet/.test(code) && /if/.test(code) && /elif|else/.test(code) && /return/.test(code),
+        exampleAnswer:'def greet(name, lang):\n    if lang == "thai":\n        return "สวัสดี " + name\n    elif lang == "english":\n        return "Hello " + name\n    else:\n        return "Hi " + name',
+        topic:'function' }
+    ]
+  },
+  debug: {
+    label: '🐛 หาบั๊ก (Debug)',
+    exercises: [
+      { level:'easy', q:'โค้ดนี้มีข้อผิดพลาด — แก้ให้พิมพ์ "Hello World" ได้',
+        code:`prnt("Hello World")`,
+        bugDesc:'ชื่อฟังก์ชัน print เขียนผิด',
+        check: code => /print\s*\(\s*["']Hello World["']\s*\)/.test(code) && !/prnt/.test(code),
+        exampleAnswer:'print("Hello World")',
+        explain:'print (ไม่ใช่ prnt) คือฟังก์ชันพิมพ์ข้อความ' },
+      { level:'easy', q:'แก้โค้ดให้คำนวณและพิมพ์ผลบวกของ a และ b',
+        code:`a = 5\nb = 3\nprint(a - b)`,
+        bugDesc:'operator ผิด ควรบวก ไม่ใช่ลบ',
+        check: code => /print\s*\(\s*a\s*\+\s*b\s*\)/.test(code),
+        exampleAnswer:'a = 5\nb = 3\nprint(a + b)',
+        explain:'ต้องการบวก (+) ไม่ใช่ลบ (-)' },
+      { level:'easy', q:'แก้โค้ดให้ฟังก์ชัน square ทำงานได้',
+        code:`def square(n)\n    return n * n`,
+        bugDesc:'ขาด : ท้าย def',
+        check: code => /def\s+square\s*\(\s*n\s*\)\s*:/.test(code),
+        exampleAnswer:'def square(n):\n    return n * n',
+        explain:'บรรทัด def ต้องจบด้วย : (colon) เสมอ' },
+      { level:'medium', q:'โค้ดนี้ควรพิมพ์เลขคู่ แต่ทำงานผิด — แก้ไข',
+        code:`for i in range(1, 11):\n    if i % 2 = 0:\n        print(i)`,
+        bugDesc:'เปรียบเทียบต้องใช้ == ไม่ใช่ =',
+        check: code => /if\s+i\s*%\s*2\s*==\s*0/.test(code),
+        exampleAnswer:'for i in range(1, 11):\n    if i % 2 == 0:\n        print(i)',
+        explain:'= คือกำหนดค่า, == คือเปรียบเทียบ (ต้องใช้ == ใน if)' },
+      { level:'medium', q:'ฟังก์ชันนี้ควรคืนผลบวก แต่คืน None — แก้ไข',
+        code:`def add(a, b):\n    result = a + b\n\nprint(add(3, 4))`,
+        bugDesc:'ขาด return',
+        check: code => /return/.test(code),
+        exampleAnswer:'def add(a, b):\n    result = a + b\n    return result',
+        explain:'ถ้าไม่มี return ฟังก์ชันจะคืน None เสมอ' },
+      { level:'medium', q:'โค้ดนี้ควรแปลง input เป็นตัวเลข แต่ error — แก้ไข',
+        code:`num = input("ใส่ตัวเลข: ")\nprint(num + 10)`,
+        bugDesc:'input() คืน string ต้องแปลงเป็น int ก่อน',
+        check: code => /int\s*\(\s*input/.test(code),
+        exampleAnswer:'num = int(input("ใส่ตัวเลข: "))\nprint(num + 10)',
+        explain:'input() คืน string เสมอ ต้องแปลงด้วย int() ก่อนบวกเลข' },
+      { level:'hard', q:'while loop นี้ loop ตลอด — แก้ให้หยุดเมื่อ count ถึง 5',
+        code:`count = 0\nwhile count < 5:\n    print(count)`,
+        bugDesc:'ขาดการเพิ่มค่า count',
+        check: code => /count\s*\+=\s*1|count\s*=\s*count\s*\+\s*1/.test(code),
+        exampleAnswer:'count = 0\nwhile count < 5:\n    print(count)\n    count += 1',
+        explain:'ต้องเพิ่ม count += 1 ในลูป yokeเช่นนั้น count ไม่เปลี่ยน → loop ตลอดไป' },
+      { level:'hard', q:'โค้ดนี้ควรพิมพ์ "ผ่าน" เมื่อคะแนน >= 50 แต่ logic ผิด — แก้ไข',
+        code:`score = 75\nif score < 50:\n    print("ผ่าน")\nelse:\n    print("ไม่ผ่าน")`,
+        bugDesc:'เงื่อนไขกลับด้าน ควรเป็น >= ไม่ใช่ <',
+        check: code => /if\s+score\s*>=\s*50/.test(code),
+        exampleAnswer:'score = 75\nif score >= 50:\n    print("ผ่าน")\nelse:\n    print("ไม่ผ่าน")',
+        explain:'คะแนน >= 50 ถึงจะผ่าน ไม่ใช่ < 50' }
+    ]
+  }
+};
+
+// ──────────────────────────────────────────────
+// STATE
+// ──────────────────────────────────────────────
+let mode = null, exList = [], idx = 0, results = [], xp = 0, streak = 0;
+let answered = {};
+
+// ──────────────────────────────────────────────
+// NAVIGATION
+// ──────────────────────────────────────────────
+function openMode(m) {
+  mode = m;
+  exList = modes[m].exercises;
+  idx = 0; results = []; answered = {};
+  document.getElementById('homeScreen').style.display = 'none';
+  document.getElementById('quizScreen').style.display = 'block';
+  document.getElementById('scoreScreen').style.display = 'none';
+  document.getElementById('modeLabel').textContent = modes[m].label;
+  buildTrack();
+  renderQ();
+}
+
+function goHome() {
+  document.getElementById('homeScreen').style.display = 'block';
+  document.getElementById('quizScreen').style.display = 'none';
+  document.getElementById('scoreScreen').style.display = 'none';
+}
+
+// ──────────────────────────────────────────────
+// TRACK DOTS
+// ──────────────────────────────────────────────
+function buildTrack() {
+  const t = document.getElementById('qTrack');
+  t.innerHTML = exList.map((_, i) => `<div class="q-dot" id="dot${i}"></div>`).join('');
+  updateTrack();
+}
+function updateTrack() {
+  exList.forEach((_, i) => {
+    const d = document.getElementById('dot' + i);
+    if (!d) return;
+    d.className = 'q-dot';
+    if (i === idx) d.classList.add('current');
+    else if (results[i] === true) d.classList.add('done-c');
+    else if (results[i] === false) d.classList.add('done-w');
+  });
+}
+
+// ──────────────────────────────────────────────
+// RENDER QUESTION
+// ──────────────────────────────────────────────
+function renderQ() {
+  updateTrack();
+  const ex = exList[idx];
+  const m = document.getElementById('exerciseMount');
+  const isAnswered = answered[idx] !== undefined;
+  const modeType = mode;
+
+  let inner = '';
+
+  // Badge
+  const bLevel = ex.level;
+  const modeLabels = { think:'Trace', fill:'Fill', write:'Code', debug:'Debug' };
+
+  // Code display
+  const codeHtml = ex.code ? `<div class="code-block">${syntaxHL(ex.code)}</div>` : '';
+
+  if (modeType === 'think') {
+    const choicesHtml = ex.choices.map((c, i) => {
+      let cls = '';
+      if (isAnswered) {
+        if (i === ex.answer) cls = 'correct';
+        else if (i === answered[idx] && answered[idx] !== ex.answer) cls = 'wrong';
+      }
+      return `<button class="choice" ${isAnswered ? 'disabled' : ''} onclick="answerMCQ(${i})"
+        style="${cls ? '' : ''}">
+        <span class="choice-key">${'ABCD'[i]}</span>
+        <span style="font-family:'JetBrains Mono',monospace">${c}</span>
+      </button>`;
+    }).join('');
+    inner = `<div class="choices">${choicesHtml}</div>`;
+  } else if (modeType === 'fill') {
+    const val = isAnswered ? answered[idx] : '';
+    const cls = isAnswered ? (answered[idx] === ex.answer ? 'correct' : 'wrong') : '';
+    inner = `<div class="fill-row">
+      <input class="fill-in ${cls}" id="fillIn" type="text" placeholder="พิมพ์คำตอบ..."
+        value="${val}" ${isAnswered ? 'disabled' : ''}/>
+      <button class="btn btn-check" onclick="answerFill()" ${isAnswered ? 'disabled' : ''}>ตรวจ ✓</button>
+    </div>`;
+  } else {
+    // write / debug
+    const template = ex.template || (ex.code ? ex.code : '');
+    const savedCode = answered[idx] !== undefined ? answered[idx] : template;
+    const cls = isAnswered ? (results[idx] ? 'correct' : 'wrong') : '';
+    inner = `
+      <div class="editor-label">// <span>แก้ไขโค้ดด้านล่าง</span> — กด Tab เพื่อย่อหน้า</div>
+      <textarea class="code-editor ${cls}" id="codeEd" spellcheck="false"
+        ${isAnswered ? 'disabled' : ''}>${savedCode}</textarea>
+      <div style="margin-top:10px">
+        <button class="btn btn-check" onclick="answerCode()" ${isAnswered ? 'disabled' : ''}>🤖 AI ตรวจโค้ด</button>
+      </div>`;
+  }
+
+  // Feedback
+  let feedbackHtml = '';
+  if (isAnswered) {
+    const ok = results[idx];
+    feedbackHtml = buildFeedback(ok, ex, modeType);
+  }
+
+  // Next btn
+  const isLast = idx === exList.length - 1;
+  const nextLabel = isLast ? 'ดูคะแนน 🏆' : 'ข้อถัดไป →';
+
+  m.innerHTML = `
+  <div class="ex-card">
+    <div class="ex-top">
+      <span class="badge ${bLevel}">${bLevel === 'easy' ? 'ง่าย' : bLevel === 'medium' ? 'กลาง' : 'ยาก'}</span>
+      <span class="badge-mode">${modeLabels[modeType]}</span>
+      <span class="ex-qno">ข้อ ${idx+1} / ${exList.length}</span>
+    </div>
+    <div class="ex-body">
+      <div class="ex-q">
+        ${ex.q}
+        ${ex.hint ? `<span class="sub">💡 Hint: ${ex.hint}</span>` : ''}
+      </div>
+      ${codeHtml}
+      ${inner}
+      <div class="feedback-wrap ${isAnswered ? 'show' : ''}" id="fbWrap">
+        ${feedbackHtml}
+      </div>
+    </div>
+  </div>
+  <div class="nav-row">
+    <button class="btn btn-nav" onclick="navQ(-1)" ${idx === 0 ? 'disabled' : ''}>← ก่อนหน้า</button>
+    <button class="btn btn-next" id="nextBtn" onclick="navQ(1)" ${!isAnswered ? 'disabled' : ''}>${nextLabel}</button>
+  </div>`;
+
+  // Tab key in textarea
+  const ed = document.getElementById('codeEd');
+  if (ed) {
+    ed.addEventListener('keydown', e => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const s = ed.selectionStart, end = ed.selectionEnd;
+        ed.value = ed.value.substring(0, s) + '    ' + ed.value.substring(end);
+        ed.selectionStart = ed.selectionEnd = s + 4;
+      }
+    });
+    setTimeout(() => ed.focus(), 50);
+  }
+
+  const fi = document.getElementById('fillIn');
+  if (fi) {
+    fi.addEventListener('keydown', e => { if (e.key === 'Enter') answerFill(); });
+    setTimeout(() => fi.focus(), 50);
+  }
+}
+
+// ──────────────────────────────────────────────
+// FEEDBACK BUILDER
+// ──────────────────────────────────────────────
+function buildFeedback(ok, ex, modeType) {
+  if (ok) {
+    const msgs = ['เยี่ยมเลย! 🔥', 'ถูกต้องมาก! ✅', 'เก่งมาก! 💪', 'Perfect! 🎯'];
+    const msg = msgs[Math.floor(Math.random() * msgs.length)];
+    return `
+      <div class="feedback-head correct">${msg}</div>
+      <div class="feedback-body correct">${ex.explain || ex.exampleAnswer ? `<b>คำอธิบาย:</b> ${ex.explain || ''}${ex.exampleAnswer ? `<br><br>ตัวอย่างคำตอบ:<br><span class="hint-tag" style="display:block;margin-top:6px;padding:10px;font-size:12px;white-space:pre-wrap">${ex.exampleAnswer}</span>` : ''}` : ''}</div>`;
+  } else {
+    const hint = ex.bugDesc || ex.explain || '';
+    return `
+      <div class="feedback-head wrong">❌ ยังไม่ถูก — ลองใหม่ได้เลย!</div>
+      <div class="feedback-body wrong">
+        ${hint ? `<b>💡 คำใบ้:</b> ${hint}<br><br>` : ''}
+        <b>ตัวอย่างคำตอบที่ถูก:</b><br>
+        <span class="hint-tag" style="display:block;margin-top:6px;padding:10px;font-size:12px;white-space:pre-wrap">${ex.exampleAnswer || ex.answer || ''}</span>
+      </div>`;
+  }
+}
+
+// ──────────────────────────────────────────────
+// AI FEEDBACK for code
+// ──────────────────────────────────────────────
+async function answerCode() {
+  const ex = exList[idx];
+  const code = document.getElementById('codeEd').value.trim();
+  if (!code) return;
+
+  // Disable button, show thinking
+  document.querySelector('.btn-check').disabled = true;
+  const fw = document.getElementById('fbWrap');
+  fw.className = 'feedback-wrap show';
+  fw.innerHTML = `
+    <div class="feedback-head thinking">🤖 AI กำลังตรวจโค้ด...</div>
+    <div class="feedback-body thinking"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+
+  // Quick local check first
+  let localOk = false;
+  try { localOk = ex.check(code); } catch(e) {}
+
+  // AI explanation
+  const prompt = `คุณเป็นผู้สอน Python ภาษาไทย ตรวจโค้ดของนักเรียนมือใหม่
+
+โจทย์: ${ex.q}
+ตัวอย่างคำตอบที่ถูก: ${ex.exampleAnswer}
+โค้ดของนักเรียน:
+\`\`\`python
+${code}
+\`\`\`
+
+ผลการตรวจเบื้องต้น: ${localOk ? 'น่าจะถูก' : 'น่าจะผิดหรือไม่สมบูรณ์'}
+
+ตอบเป็นภาษาไทยสั้นๆ 2-3 ประโยค:
+1. บอกว่าถูกหรือผิด
+2. อธิบายว่าทำไม
+3. ถ้าผิด ให้คำใบ้ว่าควรแก้ยังไง (ไม่ต้องให้คำตอบตรงๆ)`;
+
+  let aiText = '';
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    aiText = data.content?.find(b => b.type === 'text')?.text || '';
+  } catch(e) {
+    aiText = localOk ? 'โค้ดดูถูกต้องแล้วครับ! 🎉' : 'ลองตรวจดูอีกครั้งนะครับ อาจมีจุดที่ต้องแก้';
+  }
+
+  answered[idx] = code;
+  results[idx] = localOk;
+  if (localOk) { xp += ex.level === 'easy' ? 10 : ex.level === 'medium' ? 20 : 30; streak++; updateXP(); }
+  else { streak = 0; }
+
+  const ok = localOk;
+  const head = ok ? '✅ โค้ดถูกต้อง!' : '🤖 AI Feedback';
+  const headCls = ok ? 'correct' : 'wrong';
+
+  fw.innerHTML = `
+    <div class="feedback-head ${headCls}">${head}</div>
+    <div class="feedback-body ${headCls}">
+      <div style="margin-bottom:${ok ? 0 : 12}px">${aiText}</div>
+      ${!ok ? `<b>ตัวอย่างคำตอบ:</b><br><span class="hint-tag" style="display:block;margin-top:6px;padding:10px;font-size:12px;white-space:pre-wrap">${ex.exampleAnswer}</span>` : ''}
+    </div>`;
+
+  document.getElementById('codeEd').className = `code-editor ${ok ? 'correct' : 'wrong'}`;
+  document.getElementById('codeEd').disabled = true;
+  document.getElementById('nextBtn').disabled = false;
+  updateTrack();
+}
+
+// ──────────────────────────────────────────────
+// ANSWER HANDLERS
+// ──────────────────────────────────────────────
+function answerMCQ(i) {
+  const ex = exList[idx];
+  const ok = i === ex.answer;
+  answered[idx] = i;
+  results[idx] = ok;
+  if (ok) { xp += ex.level === 'easy' ? 10 : ex.level === 'medium' ? 20 : 30; streak++; }
+  else { streak = 0; }
+  updateXP();
+  renderQ();
+}
+
+function answerFill() {
+  const inp = document.getElementById('fillIn');
+  if (!inp) return;
+  const val = inp.value.trim();
+  if (!val) return;
+  const ex = exList[idx];
+  const ok = val === ex.answer;
+  answered[idx] = val;
+  results[idx] = ok;
+  if (ok) { xp += ex.level === 'easy' ? 10 : ex.level === 'medium' ? 20 : 30; streak++; }
+  else { streak = 0; }
+  updateXP();
+  renderQ();
+}
+
+function navQ(dir) {
+  const next = idx + dir;
+  if (next < 0) return;
+  if (next >= exList.length) { showScore(); return; }
+  idx = next;
+  renderQ();
+}
+
+// ──────────────────────────────────────────────
+// XP
+// ──────────────────────────────────────────────
+function updateXP() {
+  const maxXP = exList.reduce((s, e) => s + (e.level === 'easy' ? 10 : e.level === 'medium' ? 20 : 30), 0);
+  document.getElementById('xpBar').style.width = Math.min(100, xp / maxXP * 100) + '%';
+  document.getElementById('xpLabel').textContent = `XP ${xp}`;
+  const se = document.getElementById('streakEl');
+  if (streak >= 2) { se.style.display = 'flex'; document.getElementById('streakNum').textContent = streak; }
+  else { se.style.display = 'none'; }
+}
+
+// ──────────────────────────────────────────────
+// SCORE
+// ──────────────────────────────────────────────
+function showScore() {
+  const total = exList.length;
+  const correct = results.filter(Boolean).length;
+  const pct = Math.round(correct / total * 100);
+  const msg = pct === 100 ? 'Perfect! เก่งมากๆ 🔥' : pct >= 70 ? 'ดีมาก! เกือบสมบูรณ์แล้ว 👍' : pct >= 50 ? 'พอใช้ได้ ลองอีกรอบนะ 💪' : 'ไม่เป็นไร! ทบทวนแล้วมาใหม่ 📖';
+
+  document.getElementById('quizScreen').style.display = 'none';
+  document.getElementById('scoreScreen').style.display = 'block';
+  document.getElementById('scoreScreen').innerHTML = `
+    <div class="score-card">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--dim);margin-bottom:16px">${modes[mode].label}</div>
+      <div class="big-score">${pct}%</div>
+      <div class="score-sub">${msg}</div>
+      <div class="result-grid">
+        <div class="result-item">
+          <div class="result-num" style="color:var(--green)">${correct}</div>
+          <div class="result-label">ถูก</div>
+        </div>
+        <div class="result-item">
+          <div class="result-num" style="color:var(--red)">${total - correct}</div>
+          <div class="result-label">ผิด</div>
+        </div>
+        <div class="result-item">
+          <div class="result-num" style="color:var(--py)">${xp}</div>
+          <div class="result-label">XP ได้รับ</div>
+        </div>
+      </div>
+      <div class="score-actions">
+        <button class="btn-retry" onclick="openMode('${mode}')">🔄 ลองใหม่</button>
+        <button class="btn btn-nav" onclick="goHome()" style="padding:13px 24px">🏠 หน้าหลัก</button>
+      </div>
+    </div>`;
+}
+
+// ──────────────────────────────────────────────
+// SYNTAX HIGHLIGHTER (simple)
+// ──────────────────────────────────────────────
+function syntaxHL(code) {
+  return code
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/#.*/g, m => `<span class="cm">${m}</span>`)
+    .replace(/(".*?"|'.*?')/g, m => `<span class="st">${m}</span>`)
+    .replace(/\b(\d+\.?\d*)\b/g, m => `<span class="nu">${m}</span>`)
+    .replace(/\b(def|return|if|elif|else|for|while|in|and|or|not|break|continue|True|False|None|import|from|class|print|input|range|int|str|float|len|type)\b/g,
+      m => `<span class="kw">${m}</span>`);
+}
+</script>
+</body>
+</html>

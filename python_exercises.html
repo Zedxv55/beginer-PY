@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python แบบฝึกหัด</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --green: #3fb950;
+    --green-dim: #1a4027;
+    --blue: #58a6ff;
+    --yellow: #e3b341;
+    --red: #f85149;
+    --red-dim: #3d1a1a;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --python: #ffd43b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--python);
+  }
+
+  .logo span { color: var(--text-dim); }
+
+  .progress-bar-wrap {
+    flex: 1;
+    background: var(--surface2);
+    border-radius: 99px;
+    height: 8px;
+    overflow: hidden;
+    max-width: 300px;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green), var(--blue));
+    border-radius: 99px;
+    transition: width 0.5s ease;
+  }
+
+  .progress-label {
+    font-size: 13px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 32px 20px;
+  }
+
+  /* Topic selector */
+  .topic-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .topic-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 14px;
+  }
+
+  .topic-btn:hover { border-color: var(--blue); background: var(--surface2); }
+  .topic-btn.active { border-color: var(--python); background: #2a2200; }
+
+  .topic-btn .icon { font-size: 22px; margin-bottom: 6px; display: block; }
+  .topic-btn .name { font-weight: 700; font-size: 14px; }
+  .topic-btn .count { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+  /* Exercise card */
+  .exercise-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-header {
+    padding: 16px 20px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 99px;
+    background: var(--python);
+    color: #000;
+    font-weight: 700;
+  }
+
+  .badge.easy { background: var(--green); }
+  .badge.medium { background: var(--yellow); color: #000; }
+  .badge.hard { background: var(--red); color: #fff; }
+
+  .q-number {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+
+  .card-body { padding: 24px 20px; }
+
+  .question-text {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+
+  .hint-code {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--blue);
+    margin-bottom: 20px;
+    white-space: pre-wrap;
+    line-height: 1.7;
+  }
+
+  /* Multiple choice */
+  .choices { display: flex; flex-direction: column; gap: 10px; }
+
+  .choice-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .choice-btn:hover:not(:disabled) { border-color: var(--blue); background: #1c2433; }
+  .choice-btn.correct { border-color: var(--green); background: var(--green-dim); color: var(--green); }
+  .choice-btn.wrong { border-color: var(--red); background: var(--red-dim); color: var(--red); }
+  .choice-btn:disabled { cursor: default; }
+
+  .choice-label {
+    width: 24px; height: 24px;
+    background: var(--border);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+    font-weight: 700;
+  }
+
+  /* Fill blank */
+  .fill-wrap { display: flex; gap: 10px; }
+
+  .fill-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .fill-input:focus { border-color: var(--blue); }
+  .fill-input.correct { border-color: var(--green); color: var(--green); }
+  .fill-input.wrong { border-color: var(--red); color: var(--red); }
+
+  .submit-btn {
+    background: var(--python);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .submit-btn:hover { opacity: 0.85; }
+  .submit-btn:disabled { opacity: 0.4; cursor: default; }
+
+  /* Feedback */
+  .feedback {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 15px;
+    display: none;
+    line-height: 1.6;
+  }
+
+  .feedback.show { display: block; animation: fadeIn 0.3s ease; }
+  .feedback.correct { background: var(--green-dim); border: 1px solid var(--green); color: var(--green); }
+  .feedback.wrong { background: var(--red-dim); border: 1px solid var(--red); color: #ff7b75; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* Navigation */
+  .nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+  }
+
+  .nav-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 20px;
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .nav-btn:hover { border-color: var(--blue); }
+  .nav-btn.primary { background: var(--blue); color: #000; border-color: var(--blue); font-weight: 700; }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+
+  /* Score summary */
+  .score-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 40px;
+    text-align: center;
+    animation: slideIn 0.4s ease;
+  }
+
+  .score-circle {
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    background: conic-gradient(var(--green) var(--pct), var(--surface2) 0);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 700;
+    position: relative;
+  }
+
+  .score-circle::before {
+    content: '';
+    position: absolute;
+    width: 76px; height: 76px;
+    background: var(--surface);
+    border-radius: 50%;
+  }
+
+  .score-circle span { position: relative; z-index: 1; }
+
+  .section-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--python);
+    font-family: 'JetBrains Mono', monospace;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">py<span>.</span>train</div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar" id="progressBar" style="width:0%"></div>
+  </div>
+  <div class="progress-label" id="progressLabel">0 / 0</div>
+</header>
+
+<div class="container">
+  <div id="topicSection">
+    <div class="section-title">เลือกหัวข้อที่ต้องการฝึก</div>
+    <div class="topic-grid" id="topicGrid"></div>
+  </div>
+
+  <div id="quizSection" style="display:none">
+    <div class="exercise-card" id="exerciseCard"></div>
+    <div class="nav-row">
+      <button class="nav-btn" id="prevBtn" onclick="navigate(-1)">← ก่อนหน้า</button>
+      <button class="nav-btn primary" id="nextBtn" onclick="navigate(1)" disabled>ถัดไป →</button>
+    </div>
+  </div>
+
+  <div id="scoreSection" style="display:none"></div>
+</div>
+
+<script>
+const topics = [
+  {
+    id: 'variables',
+    icon: '📦',
+    name: 'ตัวแปร & ชนิดข้อมูล',
+    exercises: [
+      {
+        type: 'mcq',
+        level: 'easy',
+        question: 'ผลลัพธ์ของโค้ดนี้คืออะไร?',
+        code: 'x = 10\ny = 3\nprint(x % y)',
+        choices: ['3', '1', '3.33', '0'],
+        answer: 1,
+        explanation: '% คือ modulo (เศษจากการหาร) 10 ÷ 3 = 3 เศษ 1 ✅'
+      },
+      {
+        type: 'fill',
+        level: 'easy',
+        question: 'เติมคำสั่งเพื่อดูชนิดข้อมูลของตัวแปร name',
+        code: 'name = "Python"\nprint(_____(name))',
+        answer: 'type',
+        explanation: 'ใช้ type() เพื่อดูว่าตัวแปรเป็นชนิดอะไร เช่น str, int, float'
+      },
+      {
+        type: 'mcq',
+        level: 'easy',
+        question: 'ข้อใดเป็น float?',
+        code: null,
+        choices: ['x = 5', 'x = "3.14"', 'x = 3.14', 'x = True'],
+        answer: 2,
+        explanation: '3.14 มีจุดทศนิยม → ชนิด float ส่วน "3.14" มีเครื่องหมายคำพูด → ชนิด str'
+      },
+      {
+        type: 'fill',
+        level: 'medium',
+        question: 'แปลง string "25" ให้เป็น integer',
+        code: 'age = "25"\nage = _____(age)\nprint(age + 5)  # ต้องได้ 30',
+        answer: 'int',
+        explanation: 'int() แปลง string → integer, float() แปลงเป็นทศนิยม, str() แปลงเป็นข้อความ'
+      }
+    ]
+  },
+  {
+    id: 'input',
+    icon: '⌨️',
+    name: 'Input / Output',
+    exercises: [
+      {
+        type: 'mcq',
+        level: 'easy',
+        question: 'input() คืนค่าชนิดอะไรเสมอ?',
+        code: null,
+        choices: ['int', 'float', 'str', 'bool'],
+        answer: 2,
+        explanation: 'input() คืนค่าเป็น string เสมอ ถ้าต้องการตัวเลขต้องแปลงด้วย int() หรือ float()'
+      },
+      {
+        type: 'fill',
+        level: 'easy',
+        question: 'เขียนโค้ดรับตัวเลขจากผู้ใช้แล้วแปลงเป็น int',
+        code: 'num = _____(input("ใส่ตัวเลข: "))',
+        answer: 'int',
+        explanation: 'ต้องครอบ input() ด้วย int() เพราะ input คืน string เสมอ'
+      },
+      {
+        type: 'mcq',
+        level: 'medium',
+        question: 'ผลลัพธ์คืออะไร ถ้าผู้ใช้พิมพ์ "5"?',
+        code: 'x = input("ใส่ตัวเลข: ")\nprint(x * 2)',
+        choices: ['10', '55', 'Error', '5'],
+        answer: 1,
+        explanation: 'x เป็น string "5" ดังนั้น "5" * 2 = "55" (string * int = ทำซ้ำข้อความ)'
+      }
+    ]
+  },
+  {
+    id: 'condition',
+    icon: '🔀',
+    name: 'เงื่อนไข (If/Else)',
+    exercises: [
+      {
+        type: 'mcq',
+        level: 'easy',
+        question: 'ผลลัพธ์ของโค้ดนี้คืออะไร?',
+        code: 'score = 75\nif score >= 80:\n    print("A")\nelif score >= 70:\n    print("B")\nelse:\n    print("C")',
+        choices: ['A', 'B', 'C', 'Error'],
+        answer: 1,
+        explanation: 'score=75 ไม่ผ่าน >= 80 แต่ผ่าน >= 70 → พิมพ์ "B"'
+      },
+      {
+        type: 'fill',
+        level: 'easy',
+        question: 'เติมคำสั่งตรวจสอบว่าเป็นเลขคู่',
+        code: 'num = 8\nif num _____ 2 == 0:\n    print("เลขคู่")',
+        answer: '%',
+        explanation: '% (modulo) หาเศษจากการหาร ถ้า num % 2 == 0 แสดงว่าเป็นเลขคู่'
+      },
+      {
+        type: 'mcq',
+        level: 'medium',
+        question: 'and และ or ต่างกันอย่างไร?',
+        code: 'x = 5\nprint(x > 3 and x < 10)\nprint(x > 7 or x < 3)',
+        choices: ['True, True', 'True, False', 'False, True', 'False, False'],
+        answer: 1,
+        explanation: 'and: ทั้งสองต้องจริง → True\nor: อย่างน้อยหนึ่งอันจริง → False (5>7=F, 5<3=F)'
+      },
+      {
+        type: 'fill',
+        level: 'medium',
+        question: 'เติม keyword เพื่อตรวจสอบเงื่อนไขที่สาม',
+        code: 'grade = 65\nif grade >= 80:\n    print("ดีมาก")\n_____ grade >= 70:\n    print("ดี")\nelse:\n    print("พอใช้")',
+        answer: 'elif',
+        explanation: 'elif ย่อมาจาก "else if" ใช้เมื่อมีเงื่อนไขมากกว่า 2 กรณี'
+      }
+    ]
+  },
+  {
+    id: 'loop',
+    icon: '🔁',
+    name: 'วนซ้ำ (Loop)',
+    exercises: [
+      {
+        type: 'mcq',
+        level: 'easy',
+        question: 'range(1, 6) สร้างตัวเลขอะไรบ้าง?',
+        code: null,
+        choices: ['1,2,3,4,5,6', '0,1,2,3,4,5', '1,2,3,4,5', '1,2,3,4,5,6,7'],
+        answer: 2,
+        explanation: 'range(start, stop) — stop ไม่รวม ดังนั้น range(1,6) = 1,2,3,4,5'
+      },
+      {
+        type: 'fill',
+        level: 'easy',
+        question: 'เติมเพื่อให้วนซ้ำ 5 รอบ (0-4)',
+        code: 'for i in _____(5):\n    print(i)',
+        answer: 'range',
+        explanation: 'range(5) สร้าง sequence 0,1,2,3,4 ให้ for loop วนซ้ำ'
+      },
+      {
+        type: 'mcq',
+        level: 'medium',
+        question: 'break ทำงานอย่างไร?',
+        code: 'for i in range(10):\n    if i == 5:\n        break\n    print(i)',
+        choices: ['พิมพ์ 0-9', 'พิมพ์ 0-5', 'พิมพ์ 0-4', 'พิมพ์ 5-9'],
+        answer: 2,
+        explanation: 'break หยุด loop ทันที เมื่อ i==5 → ออกจาก loop เลย จึงพิมพ์แค่ 0,1,2,3,4'
+      },
+      {
+        type: 'fill',
+        level: 'medium',
+        question: 'เติม keyword เพื่อข้ามเฉพาะ i=3 แต่วนต่อ',
+        code: 'for i in range(5):\n    if i == 3:\n        _____\n    print(i)  # พิมพ์ 0,1,2,4',
+        answer: 'continue',
+        explanation: 'continue ข้ามรอบนั้นแล้ววนต่อ (ต่างจาก break ที่หยุดเลย)'
+      }
+    ]
+  },
+  {
+    id: 'function',
+    icon: '🔧',
+    name: 'ฟังก์ชัน (Function)',
+    exercises: [
+      {
+        type: 'fill',
+        level: 'easy',
+        question: 'เติม keyword เพื่อนิยามฟังก์ชัน',
+        code: '_____ greet(name):\n    print("สวัสดี", name)\n\ngreet("สมชาย")',
+        answer: 'def',
+        explanation: 'def (define) ใช้ประกาศฟังก์ชัน ตามด้วยชื่อฟังก์ชันและ ()'
+      },
+      {
+        type: 'mcq',
+        level: 'easy',
+        question: 'ผลลัพธ์ของโค้ดนี้คืออะไร?',
+        code: 'def add(a, b):\n    return a + b\n\nresult = add(3, 4)\nprint(result)',
+        choices: ['3', '4', '7', 'None'],
+        answer: 2,
+        explanation: 'ฟังก์ชัน add รับ a=3, b=4 แล้ว return 3+4=7 → result=7 → print 7'
+      },
+      {
+        type: 'mcq',
+        level: 'medium',
+        question: 'ถ้าไม่มี return ฟังก์ชันคืนค่าอะไร?',
+        code: 'def say_hi():\n    print("Hi!")\n\nresult = say_hi()\nprint(result)',
+        choices: ['Hi!', 'None', 'Error', '"Hi!"'],
+        answer: 1,
+        explanation: 'พิมพ์ "Hi!" ก่อน แล้ว result=None เพราะไม่มี return → print(None) = None'
+      },
+      {
+        type: 'fill',
+        level: 'medium',
+        question: 'เติม keyword เพื่อส่งค่ากลับ',
+        code: 'def square(n):\n    _____ n * n\n\nprint(square(5))  # ต้องได้ 25',
+        answer: 'return',
+        explanation: 'return ส่งค่ากลับจากฟังก์ชัน ถ้าไม่มี return จะได้ None'
+      }
+    ]
+  }
+];
+
+let currentTopic = null;
+let currentIndex = 0;
+let answered = {};
+
+function initTopics() {
+  const grid = document.getElementById('topicGrid');
+  grid.innerHTML = '';
+  topics.forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'topic-btn';
+    btn.innerHTML = `<span class="icon">${t.icon}</span><div class="name">${t.name}</div><div class="count">${t.exercises.length} ข้อ</div>`;
+    btn.onclick = () => startTopic(t);
+    grid.appendChild(btn);
+  });
+}
+
+function startTopic(topic) {
+  currentTopic = topic;
+  currentIndex = 0;
+  answered = {};
+  document.getElementById('topicSection').style.display = 'none';
+  document.getElementById('quizSection').style.display = 'block';
+  document.getElementById('scoreSection').style.display = 'none';
+  renderExercise();
+}
+
+function renderExercise() {
+  const ex = currentTopic.exercises[currentIndex];
+  const total = currentTopic.exercises.length;
+  const done = Object.keys(answered).length;
+
+  document.getElementById('progressBar').style.width = (done / total * 100) + '%';
+  document.getElementById('progressLabel').textContent = `${done} / ${total}`;
+
+  const card = document.getElementById('exerciseCard');
+  const isAnswered = answered[currentIndex] !== undefined;
+  const userAns = answered[currentIndex];
+
+  let choicesHTML = '';
+  if (ex.type === 'mcq') {
+    choicesHTML = `<div class="choices">` + ex.choices.map((c, i) => {
+      let cls = '';
+      if (isAnswered) {
+        if (i === ex.answer) cls = 'correct';
+        else if (i === userAns && userAns !== ex.answer) cls = 'wrong';
+      }
+      return `<button class="choice-btn ${cls}" ${isAnswered ? 'disabled' : ''} onclick="answerMCQ(${i})">
+        <span class="choice-label">${'ABCD'[i]}</span>
+        <span style="font-family:'JetBrains Mono',monospace">${c}</span>
+      </button>`;
+    }).join('') + `</div>`;
+  } else {
+    const cls = isAnswered ? (userAns === ex.answer ? 'correct' : 'wrong') : '';
+    choicesHTML = `<div class="fill-wrap">
+      <input class="fill-input ${cls}" id="fillInput" type="text" placeholder="พิมพ์คำตอบ..." ${isAnswered ? 'disabled value="' + (userAns || '') + '"' : ''}/>
+      <button class="submit-btn" id="submitBtn" onclick="answerFill()" ${isAnswered ? 'disabled' : ''}>ตรวจ</button>
+    </div>`;
+  }
+
+  const feedbackHTML = isAnswered ? `<div class="feedback ${userAns === ex.answer || (ex.type === 'mcq' && userAns === ex.answer) ? 'correct' : 'wrong'} show">
+    ${answered[currentIndex] === ex.answer ? '✅ ถูกต้อง! ' : '❌ ไม่ถูก '}${ex.explanation}
+  </div>` : `<div class="feedback" id="feedbackBox"></div>`;
+
+  card.innerHTML = `
+    <div class="card-header">
+      <span class="badge ${ex.level}">${ex.level === 'easy' ? 'ง่าย' : ex.level === 'medium' ? 'ปานกลาง' : 'ยาก'}</span>
+      <span class="q-number">ข้อ ${currentIndex + 1} / ${total}</span>
+    </div>
+    <div class="card-body">
+      <div class="question-text">${ex.question}</div>
+      ${ex.code ? `<div class="hint-code">${ex.code}</div>` : ''}
+      ${choicesHTML}
+      ${feedbackHTML}
+    </div>`;
+
+  document.getElementById('prevBtn').disabled = currentIndex === 0;
+  document.getElementById('nextBtn').disabled = !isAnswered;
+
+  const isLast = currentIndex === total - 1;
+  document.getElementById('nextBtn').textContent = isLast ? 'ดูผลลัพธ์ 🏆' : 'ถัดไป →';
+
+  if (!isAnswered && ex.type === 'fill') {
+    setTimeout(() => {
+      const inp = document.getElementById('fillInput');
+      if (inp) {
+        inp.addEventListener('keydown', e => { if (e.key === 'Enter') answerFill(); });
+        inp.focus();
+      }
+    }, 50);
+  }
+}
+
+function answerMCQ(i) {
+  const ex = currentTopic.exercises[currentIndex];
+  answered[currentIndex] = i;
+  renderExercise();
+  document.getElementById('nextBtn').disabled = false;
+}
+
+function answerFill() {
+  const inp = document.getElementById('fillInput');
+  if (!inp) return;
+  const val = inp.value.trim();
+  if (!val) return;
+  const ex = currentTopic.exercises[currentIndex];
+  answered[currentIndex] = val === ex.answer ? ex.answer : val;
+  renderExercise();
+}
+
+function navigate(dir) {
+  const total = currentTopic.exercises.length;
+  const next = currentIndex + dir;
+  if (next >= total) {
+    showScore();
+    return;
+  }
+  if (next < 0) return;
+  currentIndex = next;
+  renderExercise();
+}
+
+function showScore() {
+  const total = currentTopic.exercises.length;
+  let correct = 0;
+  currentTopic.exercises.forEach((ex, i) => {
+    if (answered[i] === ex.answer) correct++;
+  });
+  const pct = Math.round(correct / total * 100);
+
+  document.getElementById('quizSection').style.display = 'none';
+  document.getElementById('scoreSection').style.display = 'block';
+
+  const msg = pct === 100 ? 'เยี่ยมมาก! 🔥 ทำได้ทุกข้อเลย!' :
+              pct >= 70 ? 'ดีมาก! 👍 เกือบครบแล้ว' :
+              pct >= 50 ? 'พอใช้ได้ ลองทำอีกรอบนะ 💪' :
+              'ไม่เป็นไร! ทบทวนแล้วลองใหม่ได้เลย 📖';
+
+  document.getElementById('scoreSection').innerHTML = `
+    <div class="score-box">
+      <div class="section-title">${currentTopic.icon} ${currentTopic.name}</div>
+      <div class="score-circle" style="--pct: ${pct * 3.6}deg">
+        <span>${correct}/${total}</span>
+      </div>
+      <div style="font-size:20px;font-weight:700;margin-bottom:8px">${pct}%</div>
+      <div style="color:var(--text-dim);margin-bottom:28px">${msg}</div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button class="nav-btn primary" onclick="startTopic(currentTopic)">ลองใหม่อีกครั้ง 🔄</button>
+        <button class="nav-btn" onclick="goHome()">เลือกหัวข้ออื่น 🏠</button>
+      </div>
+    </div>`;
+
+  document.getElementById('progressBar').style.width = '100%';
+  document.getElementById('progressLabel').textContent = `${total} / ${total}`;
+}
+
+function goHome() {
+  document.getElementById('topicSection').style.display = 'block';
+  document.getElementById('quizSection').style.display = 'none';
+  document.getElementById('scoreSection').style.display = 'none';
+  document.getElementById('progressBar').style.width = '0%';
+  document.getElementById('progressLabel').textContent = '0 / 0';
+}
+
+initTopics();
+</script>
+</body>
+</html>
